@@ -19,7 +19,7 @@ public class People {
     private Integer birthYear;
     private Integer deathYear;
 
-    @ManyToMany(mappedBy = "authors", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.EAGER)
+    @ManyToMany(mappedBy = "authors", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY) // Alterado para LAZY
     private List<Book> bookList = new ArrayList<>();
 
     public People() {}
@@ -74,35 +74,9 @@ public class People {
         return bookList;
     }
 
-    public void setBookList(List<Book> bookList) {
-
-        // Limpa as associações bidirecionais antigas
-        for (Book book : this.bookList) {
-            book.getAuthors().remove(this);
-        }
-
-        this.bookList.clear();
-
-        // Atualiza a lista de livros e define a associação bidirecional
-        if (bookList != null) {
-            for (Book book : bookList) {
-                this.addBook(book);
-            }
-        }
-    }
-
-    public void addBook(Book book) {
-        if (!this.bookList.contains(book)) {
-            this.bookList.add(book);
-            book.getAuthors().add(this);
-        }
-    }
 
     @Override
     public String toString() {
-        return
-                "name: " + name +
-                ", Birth year: " + birthYear +
-                ", Death year: " + deathYear;
+        return String.format("Name: %s, Birth Year: %d, Death Year: %d", name, birthYear, deathYear);
     }
 }

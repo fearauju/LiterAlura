@@ -1,9 +1,7 @@
 package br.com.Challenger.LiterAlura.model;
 
 import jakarta.persistence.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 
 @Entity
@@ -17,10 +15,18 @@ public class Book {
     @Column(unique = true, nullable = false, length = 1000)
     private String title;
 
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "book_languages", joinColumns = @JoinColumn(name = "book_id"))
     @Column(name = "languages")
-    private List<String> languages = new ArrayList<>();
+    private Set<String> languages = new HashSet<>();  //O Hibernate permite carregar múltiplos fetch joins quando as coleções são do tipo Set em vez de List.
+
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "book_subjects", joinColumns = @JoinColumn(name = "book_id"))
+    @Column(name = "subjects")
+    private Set<String> subjects = new HashSet<>();
+
+    @Enumerated(EnumType.STRING)
+    private Genre genre;
 
     @Column(name = "copyright")
     private Boolean copyright;
@@ -28,12 +34,7 @@ public class Book {
     @Column(name = "download_count")
     private Integer downloadCount;
 
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "book_subjects", joinColumns = @JoinColumn(name = "book_id"))
-    @Column(name = "subjects")
-    private List<String> subjects;
-
-    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.EAGER)
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
     @JoinTable(
             name = "book_people",
             joinColumns = @JoinColumn(name = "book_id"),
@@ -41,12 +42,13 @@ public class Book {
     )
     private List<People> authors = new ArrayList<>();
 
-    public Book() {
+    public Book(){
     }
 
-    public Book(String title, List<String> languages, List<String> subjects, Boolean copyright, Integer downloadCount) {
+    public Book(String title, Set<String> languages, Set<String> subjects, boolean copyright, Integer downloadCount) {
         this.title = title;
         this.languages = languages;
+        this.genre = Genre.fromSubjects(subjects).orElse(Genre.UNDEFINED);
         this.subjects = subjects;
         this.copyright = copyright;
         this.downloadCount = downloadCount;
@@ -54,11 +56,20 @@ public class Book {
 
     // Getters e Setters
 
-    public List<String> getSubjects() {
+
+    public Genre getGenre() {
+        return genre;
+    }
+
+    public void setLanguages(Set<String> languages) {
+        this.languages = languages;
+    }
+
+    public Set<String> getSubjects() {
         return subjects;
     }
 
-    public void setSubjects(List<String> subjects) {
+    public void setSubjects(Set<String> subjects) {
         this.subjects = subjects;
     }
 
@@ -78,12 +89,8 @@ public class Book {
         this.title = title;
     }
 
-    public List<String> getLanguages() {
+    public Set<String> getLanguages() {
         return languages;
-    }
-
-    public void setLanguages(List<String> languages) {
-        this.languages = languages;
     }
 
     public Boolean getCopyright() {
@@ -124,20 +131,16 @@ public class Book {
 
     @Override
     public String toString() {
-        String titleStr = title != null ? title : "";
-        List<String> languagesList = languages != null ? languages : Collections.emptyList();
-        boolean copyrightBool = copyright != null && copyright;
-
-        return "Title: " + titleStr +
-                "\n" +
-                "Langyages: " + String.join(", ", languagesList) +
-                "\n" +
-                "Subjects: " + String.join(", ", subjects) +
-                "\n" +
-                "Copyright: " + (copyrightBool ? "Has Copyright" : "Public domain") +
-                "\n" +
-                "Download count: " + downloadCount +
-                "\n" +
-                "\n";
+        return String.format("""
+                Title: %s
+                Languages: %s
+                Subjects: %s
+                Copyright: %s
+                Download count: %d
+                """, title,
+                String.join(", ", languages),
+                String.join(", ", subjects),
+                copyright != null && copyright ? "Has Copyright" : "Public Domain",
+                downloadCount);
     }
 }

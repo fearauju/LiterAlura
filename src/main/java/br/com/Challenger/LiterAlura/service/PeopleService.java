@@ -1,7 +1,6 @@
 package br.com.Challenger.LiterAlura.service;
 
 import br.com.Challenger.LiterAlura.dto.AuthorDTO;
-import br.com.Challenger.LiterAlura.dto.BookWithAuthorDTO;
 import br.com.Challenger.LiterAlura.model.People;
 import br.com.Challenger.LiterAlura.repository.PeopleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,7 +8,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class PeopleService {
@@ -17,33 +15,39 @@ public class PeopleService {
     @Autowired
     private PeopleRepository peopleRepository;
 
-
     @Transactional
-    public People saveAuthor(People author) {
-        List<People> existingAuthor = peopleRepository.findByNameAuthor(author.getName());
+    public People saveOrUpdateAuthor(People author) {
+        List<People> existingAuthors = peopleRepository.findByNameContaining(author.getName());
 
-        if (existingAuthor.isEmpty()) {
+        if (existingAuthors.isEmpty()) {
             return peopleRepository.save(author);
-        } else {
-            People managedAuthor = (People) existingAuthor;
-            // Atualizar apenas campos necessários
-            if (author.getBirthYear() != null && managedAuthor.getBirthYear() == null) {
-                managedAuthor.setBirthYear(author.getBirthYear());
-            }
-            if (author.getDeathYear() != null && managedAuthor.getDeathYear() == null) {
-                managedAuthor.setDeathYear(author.getDeathYear());
-            }
-            return managedAuthor; // Retorna o autor gerenciado
         }
+
+        // Atualiza apenas campos não nulos
+        People managedAuthor = existingAuthors.get(0);
+        if (author.getBirthYear() != null && managedAuthor.getBirthYear() == null) {
+            managedAuthor.setBirthYear(author.getBirthYear());
+        }
+        if (author.getDeathYear() != null && managedAuthor.getDeathYear() == null) {
+            managedAuthor.setDeathYear(author.getDeathYear());
+        }
+        return managedAuthor;
     }
 
-
-    public boolean existsByAuthor(String name) {
-        return peopleRepository.existsByName(name);
+    public String normalizeName(String name) {
+        if (name.contains(",")) {
+            String[] parts = name.split(",");
+            name = parts[1].trim() + " " + parts[0].trim();
+        }
+        return name.toLowerCase().trim();
     }
 
-    public List<BookWithAuthorDTO> findBooksByLivingAuthorsBetweenYearsAndLanguage(Integer initialYear, Integer endYear, String language) {
-        return peopleRepository.findByAutoresVivosNestePeriodo(initialYear, endYear, language);
+    public List<People> findByNameContaining(String normalizedInputName) {
+        return peopleRepository.findByNameContaining(normalizedInputName);
+    }
+
+    public List<People> listAllAuthors() {
+            return peopleRepository.findAllAuthors();
     }
 
     public List<AuthorDTO> findAuthorsByCentury(Integer year) {
@@ -52,25 +56,4 @@ public class PeopleService {
 
         return peopleRepository.findByAuthorInCentury(startOfCentury, endOfCentury);
     }
-
-
-    public List<People> findAllAuthors() {
-        return peopleRepository.findAll();
-    }
-
-    public String normalizeName(String name) {
-        // Remove vírgulas e inverte o nome se necessário
-        if (name.contains(",")) {
-            String[] parts = name.split(",");
-            name = parts[1].trim() + " " + parts[0].trim();
-        }
-        // Converte para minúsculas e remove espaços extras
-        return name.toLowerCase().trim();
-    }
-
-    public List<People> findByNameAuthor(String authorName) {
-        return peopleRepository.findByNameAuthor(authorName);
-    }
 }
-
-
