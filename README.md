@@ -92,9 +92,9 @@
     - Exemplos:
         - Encontre os 10 livros mais baixados para cada idioma.
         - Determine o gênero predominante por idioma ou no geral.
-3. **Realizar Operações CRUD**:
+3. **Realizar Operações de consulta**:
     
-    - Use repositórios Spring Data JPA para operações de dados flexíveis e otimizadas.
+    - Use repositórios Spring Data JPA para consulta de dados flexíveis.
 
 ---
 
